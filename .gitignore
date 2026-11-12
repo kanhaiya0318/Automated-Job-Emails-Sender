@@ -21,6 +21,7 @@ env/
 
 # Vector store (regenerate with: python -m app.ingest)
 data/
+test_files/
 # IDE / OS
 .vscode/
 .idea/
@@ -28,3 +29,11 @@ data/
 Thumbs.db
 
 *.ipynb
+
+# Gmail OAuth and sent log
+token.json
+client_secret*.json
+sent_emails.json
+
+# Resume
+*.pdf

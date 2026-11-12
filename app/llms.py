@@ -1,8 +1,9 @@
 from __future__ import annotations
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
 
-from app.schemas import PostExtraction
 from config import settings
+from app.schemas import PostExtraction
+
 
 
 llm_decision = ChatGoogleGenerativeAI(

@@ -1,2 +1,20 @@
-google-api-python-client 
-google-auth-oauthlib
+# Automated-Job-Emails-Sender
+# Requires Python 3.12+ (main.py uses nested double quotes inside f-strings)
+
+# --- Workflow / LLM ---
+langgraph>=0.3
+langchain-core>=0.3
+langchain-google-genai>=2.0
+
+# --- Config & validation ---
+pydantic>=2.0
+pydantic-settings>=2.0
+python-dotenv>=1.0
+
+# --- LinkedIn scraping ---
+apify-client>=1.8
+
+# --- Gmail API (OAuth) ---
+google-api-python-client>=2.100
+google-auth>=2.20
+google-auth-oauthlib>=1.0

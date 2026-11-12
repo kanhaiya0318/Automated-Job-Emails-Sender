@@ -5,12 +5,14 @@ import json
 import base64
 import mimetypes
 from email.message import EmailMessage
+from apify_client import ApifyClient
 
 from config import settings
 from app.utils.node_service import b
 from app.prompts import job_extraction_chain
 from app.schemas import PostExtraction
-from app.utils.gmail_service import EMAIL_SUBJECT, EMAIL_FORMAT,CANDIDATE,get_gmail_service
+from app.utils.gmail_service import get_gmail_service
+from app.utils.templates import *
 
 
 __all__ = [
@@ -36,7 +38,7 @@ def apify_data_scrap(state):
     #     ],
     #     "maxPosts": state.get("maxposts", 2),
     #     "sortBy": "date",
-    #     "datePosted": "day",
+    #     "postedLimit": "24h",
     #     "profileScraperMode": "short",
     #     "startPage": 1,
     #     "scrapeReactions": False,
@@ -219,7 +221,7 @@ def save_sent_email(addr):
 def email_send(state):
     job_count = state.get("job_count", 0)
     job = state["relevant_jobs"][job_count]
-    to = job.get("contact_email")
+    to = (job.get("contact_email") or "").strip().lower()
 
     if not to or to in state.get("unique_email", []):
         return {"job_count": job_count + 1}
@@ -231,10 +233,15 @@ def email_send(state):
             service = get_gmail_service()
             message = build_message(to, state["email_subject"], state["email_body"], settings.RESUME_PATH)
             service.users().messages().send(userId="me", body=message).execute()
-            save_sent_email(to)
     except Exception as e:
         print(f"[FAILED] {to}: {e}")
         return {"job_count": job_count + 1}
+
+    if not settings.DRY_RUN:
+        try:
+            save_sent_email(to)
+        except Exception as e:
+            print(f"[WARN] Sent to {to} but could not save it to {settings.SENT_FILE}: {e}")
 
     return {"job_count": job_count + 1, "unique_email": [to]}
 
