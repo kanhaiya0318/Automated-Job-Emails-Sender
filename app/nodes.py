@@ -38,8 +38,8 @@ def apify_data_scrap(state):
     run_input = {
         "searchQueries": settings.SEARCHQUERY,
         "maxPosts": state.get("maxposts", 5),
-        "sortBy": "date",
-        "postedLimit": "24h",
+        "sortBy": settings.SORTBY,
+        "postedLimit": settings.POSTEDLIMIT,
         "profileScraperMode": "short",
         "startPage": 1,
         "scrapeReactions": False,

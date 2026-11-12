@@ -1,9 +1,12 @@
+from typing import Literal
 from pydantic_settings import SettingsConfigDict, BaseSettings
 
 class Settings(BaseSettings):
     APIFY_API_TOKEN:str
     DRY_RUN_APIFY:bool
-    SEARCHQUERY:list[str] = ['"ai engineer" "hiring" "experience:1"']
+    SEARCHQUERY : list[str] = ['"ai engineer" "hiring" "experience:1"']
+    SORTBY : Literal["date", "relevance"] = "relevance"
+    POSTEDLIMIT : Literal["1h", "24h", "week"] = "24h"
 
     GEMINI_API_KEY:str
     GEMINI_DECISION_MODEL:str 
