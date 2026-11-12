@@ -28,29 +28,30 @@ __all__ = [
 
 # first Node 
 def apify_data_scrap(state):
-    # # Initialize the ApifyClient with your API token
-    # client = ApifyClient(settings.APIFY_API_TOKEN)
+    if settings.DRY_RUN_APIFY:
+        return {"apify_output":b}
+    
+    # Initialize the ApifyClient with your API token
+    client = ApifyClient(settings.APIFY_API_TOKEN)
 
-    # # Prepare the Actor input
-    # run_input = {
-    #     "searchQueries": [
-    #         '"ai engineer" "hiring" "experience:1"'
-    #     ],
-    #     "maxPosts": state.get("maxposts", 2),
-    #     "sortBy": "date",
-    #     "postedLimit": "24h",
-    #     "profileScraperMode": "short",
-    #     "startPage": 1,
-    #     "scrapeReactions": False,
-    #     "reactionsProfileScraperMode": "short",
-    #     "postNestedReactions": False,
-    #     "scrapeComments": False,
-    #     "commentsProfileScraperMode": "short",
-    #     "postNestedComments": False,
-    # }
-    # run = client.actor("buIWk2uOUzTmcLsuB").call(run_input=run_input)
-    # posts = list(client.dataset(run.default_dataset_id).iterate_items())
-    return {"apify_output":b}
+    # Prepare the Actor input
+    run_input = {
+        "searchQueries": settings.SEARCHQUERY,
+        "maxPosts": state.get("maxposts", 5),
+        "sortBy": "date",
+        "postedLimit": "24h",
+        "profileScraperMode": "short",
+        "startPage": 1,
+        "scrapeReactions": False,
+        "reactionsProfileScraperMode": "short",
+        "postNestedReactions": False,
+        "scrapeComments": False,
+        "commentsProfileScraperMode": "short",
+        "postNestedComments": False,
+    }
+    run = client.actor("buIWk2uOUzTmcLsuB").call(run_input=run_input)
+    posts = list(client.dataset(run.default_dataset_id).iterate_items())
+    return {"apify_output":posts}
 
 
 

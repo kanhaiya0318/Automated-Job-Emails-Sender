@@ -2,10 +2,11 @@ from pydantic_settings import SettingsConfigDict, BaseSettings
 
 class Settings(BaseSettings):
     APIFY_API_TOKEN:str
+    DRY_RUN_APIFY:bool
+    SEARCHQUERY:list[str] = ['"ai engineer" "hiring" "experience:1"']
 
     GEMINI_API_KEY:str
     GEMINI_DECISION_MODEL:str 
-    GEMINI_MODEL:str 
 
     #google cloud credential
     GOOGLE_CLIENT_ID:str
