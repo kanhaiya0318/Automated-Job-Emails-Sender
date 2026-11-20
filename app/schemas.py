@@ -15,6 +15,7 @@ class JobListing(BaseModel):
     contact_email: Optional[str] = Field(None, description="Email for THIS job. Copy from the candidate emails; None if none belongs to this job")
     apply_link: Optional[str] = Field(None, description="Application/job-page/form URL for THIS job. Not hashtags, bootcamps, courses or promo links")
     whatsapp_or_phone: Optional[str] = Field(None, description="WhatsApp or phone number for THIS job, exactly as written")
+    is_dm_on_linkedin:bool = Field(description="True is post say to dm on linkedin otherwise False")
     application_requirements: Optional[str] = Field(None, description="What applicants requirements and skills requirements, e.g. Immediate joiner, python, langgraph, AI/ML, Enterprise Agentic AI, Generative AI solutions..etc.")
 
 class PostExtraction(BaseModel):

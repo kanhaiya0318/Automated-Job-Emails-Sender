@@ -41,6 +41,8 @@ if run_clicked:
             st.session_state.pop("result", None)
             st.error(f"Run failed: {e}")
 
+
+
 # ---------- Results ----------
 result = st.session_state.get("result")
 
@@ -54,28 +56,99 @@ if result:
     c3.metric("Skipped jobs", len(skipped))
 
     st.subheader("Relevant jobs")
+    st.subheader("1. Email")
     if relevant:
-        df = pd.DataFrame(relevant)
-        df["apply_methods"] = df["apply_methods"].apply(
-            lambda m: ", ".join(m) if isinstance(m, list) else ""
-        )
+        base = pd.DataFrame(relevant)
+
+        df = base[base["contact_email"].notna()].reset_index(drop=True)
         columns = [
             "company",
             "role",
             "location",
             "min_experience_years",
             "contact_email",
-            "apply_link",
-            "whatsapp_or_phone",
-            "apply_methods",
             "application_requirements",
         ]
+        df.index += 1
         st.dataframe(
             df[columns],
-            hide_index=True,
+            hide_index=False,
             column_config={"apply_link": st.column_config.LinkColumn("apply_link")},
         )
+
+
+        st.subheader("2. Link")
+        df = base[base["apply_link"].notna()].reset_index(drop=True)
+        columns = [
+            "company",
+            "role",
+            "location",
+            "min_experience_years",
+            "apply_link",
+            "application_requirements",
+        ]
+        df.index += 1
+        st.dataframe(
+            df[columns],
+            hide_index=False,
+            column_config={"apply_link": st.column_config.LinkColumn("apply_link")},
+        )
+
+
+        st.subheader("3. Whatsapp")
+        df = base[base["whatsapp_or_phone"].notna()].reset_index(drop=True)
+        columns = [
+            "company",
+            "role",
+            "location",
+            "min_experience_years",
+            "whatsapp_or_phone",
+            "application_requirements",
+        ]
+        df.index += 1
+        st.dataframe(
+            df[columns],
+            hide_index=False,
+        )
+
+
+        st.subheader("4. Linkedin DM")
+        df = base[base["is_dm_on_linkedin"] == True].reset_index(drop=True)
+        columns = [
+            "company",
+            "role",
+            "location",
+            "min_experience_years",
+            "is_dm_on_linkedin",
+            "application_requirements",
+        ]
+        df.index += 1
+        st.dataframe(
+            df[columns],
+            hide_index=False,
+        )
+
     else:
         st.info("No relevant jobs found in this run.")
+
+    st.subheader("Rejected_jobs")
+    if skipped:
+        df1 = pd.DataFrame(skipped)
+        columns = [
+            "company",
+            "reason",
+            "role",
+            "application_requirements",
+            "location",
+            "min_experience_years",
+        ]
+        df1.index += 1
+        st.dataframe(
+            df1[columns],
+            hide_index=False,
+        )
+    else:
+        st.info("No jobs Rejected")
+
 elif not run_clicked:
     st.caption("Set the max posts in the sidebar and press Run.")

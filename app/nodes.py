@@ -49,8 +49,12 @@ def apify_data_scrap(state):
         "commentsProfileScraperMode": "short",
         "postNestedComments": False,
     }
-    run = client.actor("buIWk2uOUzTmcLsuB").call(run_input=run_input)
-    posts = list(client.dataset(run.default_dataset_id).iterate_items())
+    try:
+        run = client.actor("buIWk2uOUzTmcLsuB").call(run_input=run_input)
+        posts = list(client.dataset(run.default_dataset_id).iterate_items())
+    except Exception as e:
+        print(f"[apify_data_scrap] node fail : {e}")
+
     return {"apify_output":posts}
 
 
@@ -97,14 +101,18 @@ def scan_job_posts(state):
     total_posts = state.get("total_scraped_posts", 0)
     if  post_count < total_posts:
         filtered_job_post = state.get("apify_filtered_output", "")
-
+ 
         post = filtered_job_post[post_count]
-        out = job_extraction_chain.invoke({
-            "content":post["content"],
-            "links":post["links_emails"],
-            "post_url":post["post_url"],
-        })
-
+        try:
+            out = job_extraction_chain.invoke({
+                "content":post["content"],
+                "links":post["links_emails"],
+                "post_url":post["post_url"],
+            })
+        except Exception as e:
+            print(f"[SCAN FAILED] post {post_count + 1} ({post['post_url']}): {e}")
+            out = PostExtraction(is_hiring_post=False, jobs=[])
+ 
         return {
             "job_scan_output":out.model_dump(),
             "total_job_scan_output":[out.model_dump()], 
@@ -115,9 +123,14 @@ def scan_job_posts(state):
 
 
 
+
 #forth Node:
 def find_relevant_jobs(state):
-    scan = PostExtraction.model_validate(state["job_scan_output"])
+    raw_scan = state.get("job_scan_output")
+    if not raw_scan:
+        return {"relevant_jobs": [], "irrelevant": [], "post_relevant_count": 0}
+    scan = PostExtraction.model_validate(raw_scan)
+
     jobs = scan.jobs
     relevant_jobs = []
     irrelevant = []
@@ -157,6 +170,7 @@ def find_relevant_jobs(state):
             "whatsapp_or_phone":job.whatsapp_or_phone if whatsapp_or_phone else None,
             "is_link" : True if apply_link else False,
             "apply_link": job.apply_link if apply_link else None,
+            "is_dm_on_linkedin":job.is_dm_on_linkedin,
             "company":job.company,
             "role":job.role,
             "application_requirements":job.application_requirements,
