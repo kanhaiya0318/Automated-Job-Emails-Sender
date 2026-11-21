@@ -21,6 +21,7 @@ def build_graph():
     g.add_node("scan_job_posts", scan_job_posts)
     g.add_node("find_relevant_jobs",find_relevant_jobs)
     g.add_node("email_draft", email_draft)
+    g.add_node("email_approval", email_approval)
     g.add_node("email_send", email_send)
     g.add_node("others", others)
 
@@ -30,10 +31,11 @@ def build_graph():
     g.add_edge("apify_data_scrap", "filter_apify_output")
     g.add_edge("filter_apify_output", "scan_job_posts")
     g.add_edge("scan_job_posts", "find_relevant_jobs")
-    g.add_edge("email_draft", "email_send")
+    g.add_edge("email_draft", "email_approval")
 
     g.add_conditional_edges("find_relevant_jobs", route_next, route_map)
     g.add_conditional_edges("others", route_next, route_map)
     g.add_conditional_edges("email_send", route_next, route_map)
+    g.add_conditional_edges("email_approval", route_after_approval,{**route_map, "approved": "email_send"})
 
     return g.compile(checkpointer=memory)

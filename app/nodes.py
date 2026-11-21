@@ -6,6 +6,7 @@ import base64
 import mimetypes
 from email.message import EmailMessage
 from apify_client import ApifyClient
+from langgraph.types import interrupt
 
 from config import settings
 from app.utils.node_service import b
@@ -22,6 +23,7 @@ __all__ = [
     "find_relevant_jobs",
     "email_draft",
     "email_send",
+    "email_approval",
     "others",
 ]
 
@@ -49,6 +51,7 @@ def apify_data_scrap(state):
         "commentsProfileScraperMode": "short",
         "postNestedComments": False,
     }
+    posts = []
     try:
         run = client.actor("buIWk2uOUzTmcLsuB").call(run_input=run_input)
         posts = list(client.dataset(run.default_dataset_id).iterate_items())
@@ -190,8 +193,8 @@ def find_relevant_jobs(state):
 
 #fifth Node:
 def email_draft(state):
-    jobs = state.get("relevant_jobs", [])
-    job = jobs[state.get("job_count", 0)]
+    job_count = state.get("job_count", 0)
+    job = state["relevant_jobs"][job_count]
 
     values = {
         **CANDIDATE,
@@ -203,6 +206,33 @@ def email_draft(state):
         "email_body": EMAIL_FORMAT.format(**values),
     }
 
+
+#Fifth-B Node: human approval
+def email_approval(state):
+    job_count = state.get("job_count", 0)
+    job = state["relevant_jobs"][job_count]
+    to = (job.get("contact_email") or "").strip().lower()
+
+    # nothing to approve: no email or already sent -> skip this job
+    if not to or to in state.get("unique_email", []):
+        return {"email_approved": False, "job_count": job_count + 1}
+
+    decision = interrupt({
+        "key": f"{state.get('count_scraped_posts', 0)}_{job_count}",
+        "to": to,
+        "company": job.get("company"),
+        "role": job.get("role"),
+        "subject": state["email_subject"],
+        "body": state["email_body"],
+    })
+
+    if decision.get("action") == "send":
+        return {
+            "email_approved": True,
+            "email_subject": decision["subject"],
+            "email_body": decision["body"],
+        }
+    return {"email_approved": False, "job_count": job_count + 1}
 
 
 #Sixth Node:

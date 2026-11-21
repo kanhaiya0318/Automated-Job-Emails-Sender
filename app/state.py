@@ -20,6 +20,7 @@ class state(TypedDict):
     job_count:int            # how much i done by total relevant jobs in single post
 
     unique_email:Annotated[list[str], add]
-
+    
+    email_approved: bool
     email_subject: str
     email_body: str

@@ -3,9 +3,12 @@ import uuid
 import pandas as pd
 import streamlit as st
 
+from langgraph.types import Command
+
 from config import settings
 from app.graph import build_graph
 from app.nodes import load_sent_emails
+
 
 st.set_page_config(page_title="Job Emails Sender", layout="wide")
 st.title("Automated Job Emails Sender")
@@ -24,22 +27,57 @@ with st.sidebar:
     else:
         st.warning("DRY_RUN is off: this run will send real emails.")
 
+
+
 # ---------- Run the graph ----------
+def advance(payload):
+    graph = st.session_state["graph"]
+    config = st.session_state["config"]
+    try:
+        graph.invoke(payload, config=config)
+    except Exception as e:
+        st.session_state.pop("result", None)
+        st.session_state["pending"] = None
+        st.error(f"Run failed: {e}")
+        return
+    snap = graph.get_state(config)
+    st.session_state["result"] = snap.values
+    st.session_state["pending"] = next(
+        (t.interrupts[0].value for t in snap.tasks if t.interrupts), None
+    )
+
+
 if run_clicked:
+    st.session_state["graph"] = build_graph()
+    st.session_state["config"] = {
+        "configurable": {"thread_id": str(uuid.uuid4())},
+        "recursion_limit": int(max_posts) * 5 + 10,
+    }
+    st.session_state["pending"] = None
+    st.session_state.pop("result", None)
     with st.spinner(f"Scraping and scanning up to {int(max_posts)} posts..."):
-        try:
-            graph = build_graph()
-            result = graph.invoke(
-                {"maxposts": int(max_posts), "unique_email": load_sent_emails()},
-                config={
-                    "configurable": {"thread_id": str(uuid.uuid4())},
-                    "recursion_limit": int(max_posts) * 5 + 10,
-                },
-            )
-            st.session_state["result"] = result
-        except Exception as e:
-            st.session_state.pop("result", None)
-            st.error(f"Run failed: {e}")
+        advance({"maxposts": int(max_posts), "unique_email": load_sent_emails()})
+
+# ---------- Approval (human in the loop) ----------
+pending = st.session_state.get("pending")
+if pending:
+    st.subheader("Review email before sending")
+    st.caption(f"{pending['company']} · {pending['role']}")
+    key = pending["key"]
+    st.text_input("To", value=pending["to"], disabled=True, key=f"to_{key}")
+    subject = st.text_input("Subject", value=pending["subject"], key=f"subject_{key}")
+    body = st.text_area("Body", value=pending["body"], height=350, key=f"body_{key}")
+
+    b1, b2 = st.columns(2)
+    if b1.button("Send", type="primary", use_container_width=True):
+        with st.spinner("Sending..."):
+            advance(Command(resume={"action": "send", "subject": subject, "body": body}))
+        st.rerun()
+    if b2.button("Cancel", use_container_width=True):
+        with st.spinner("Skipping..."):
+            advance(Command(resume={"action": "cancel"}))
+        st.rerun()
+    st.stop()
 
 
 
